@@ -1,47 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Splynx Tampermonkey Scripts</title>
-<style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-    h1 { color: #0074D9; }
-    p { max-width: 600px; }
-    .script-list { list-style: none; padding: 0; max-width: 700px; }
-    .script-item { background: #fff; margin-bottom: 15px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .script-item a { text-decoration: none; color: #fff; background: #0074D9; padding: 8px 14px; border-radius: 6px; display: inline-block; }
-    .script-item a:hover { background: #005fa3; }
-    small { display: block; margin-top: 5px; color: #555; }
-</style>
+    <meta charset="UTF-8">
+    <title>Splynx Tampermonkey Scripts</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #0074D9;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        main {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        p.description {
+            color: #555;
+            margin-bottom: 30px;
+        }
+        ul.script-list {
+            list-style: none;
+            padding: 0;
+        }
+        ul.script-list li {
+            background: #fff;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        ul.script-list li a {
+            text-decoration: none;
+            color: #0074D9;
+            font-weight: bold;
+        }
+        ul.script-list li a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-
-<h1>Splynx Tampermonkey Scripts</h1>
-<p>Install any of these scripts with one click. Make sure Tampermonkey is installed in your browser. Scripts will auto-update when a new version is released.</p>
-
-<ul class="script-list">
-    <li class="script-item">
-        <strong>ETC Calculator</strong>
-        <a href="<a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/splynx-etc-calculator.user.js" target="_blank">Install</a>" target="_blank">Install</a>
-        <small>ETC Calculator with categories, plan filtering, Mates Rates logic, and Fibre Starter always $0 ETC.</small>
-    </li>
-    <li class="script-item">
-        <strong>Activity Feed Visual Separator</strong>
-        <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/activity-feed-visual-separator.user.js" target="_blank">Install</a>
-        <small>Adds borders and backgrounds to activity items and always shows full text.</small>
-    </li>
-    <li class="script-item">
-        <strong>ONT Enquiry Button</strong>
-        <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-enquiry-button.user.js" target="_blank">Install</a>
-        <small>Shows ONT Enquiry button only on Services tab. Supports single or multiple PIIDs.</small>
-    </li>
-    <li class="script-item">
-        <strong>ONT Enquiry Notifier & Summary</strong>
-        <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-enquiry-notifier-summary.user.js" target="_blank">Install</a>
-        <small>Full ONT summary, collapsible sections, handover/power symbols, notifier button, connected devices, and GPON RX/TX classification.</small>
-    </li>
-</ul>
-
+    <header>
+        <h1>Splynx Tampermonkey Scripts</h1>
+        <p>Click any script to install via Tampermonkey</p>
+    </header>
+    <main>
+        <ul class="script-list">
+            <li>
+                <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/splynx-etc-calculator.user.js" target="_blank">
+                    Splynx ETC Calculator
+                </a>
+                <p>ETC Calculator with categories, filtered plans, Fibre Starter always $0 ETC.</p>
+            </li>
+            <li>
+                <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/activity-feed-visual-separator.user.js" target="_blank">
+                    Activity Feed Visual Separator
+                </a>
+                <p>Adds borders and background to activity items, always showing full text.</p>
+            </li>
+            <li>
+                <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-enquiry-button.user.js" target="_blank">
+                    ONT Enquiry Button
+                </a>
+                <p>Shows ONT Enquiry button only on Services tab; auto-uses single PIID or dropdown for multiple.</p>
+            </li>
+            <li>
+                <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-enquiry-notifier-summary.user.js" target="_blank">
+                    ONT Enquiry Notifier & Summary
+                </a>
+                <p>Full ONT summary with collapsible sections, handover & power summary, connected devices, GPON RX/TX classification, and notifier.</p>
+            </li>
+        </ul>
+    </main>
+    <footer>
+        &copy; 2026 Splynx Tampermonkey Scripts
+    </footer>
 </body>
 </html>
