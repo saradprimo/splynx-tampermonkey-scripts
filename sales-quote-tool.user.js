@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sales Quote Tool
 // @namespace    https://github.com/your-org/front-desk-quoter
-// @version      4.7
+// @version      4.7.1
 // @description  Added Gold Card 10% Discount Logic
 // @match        *://splynx.primo.net.nz/*
 // @grant        GM_addStyle
@@ -43,7 +43,7 @@
     #closePanel { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: ${COLORS.dark}; font-weight: bold; }
     .section-box { background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
     h2 { color: ${COLORS.dark}; border-bottom: 2px solid ${COLORS.blue}; padding-bottom: 5px; }
-    h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: ${COLORS.blue}; text-transform: uppercase; }
+    h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: ${COLORS.blue}; }
     label { display: block; margin: 7px 0; font-size: 13px; color: ${COLORS.dark}; }
     select, input[type="text"], input[type="number"] { width: 100%; margin-top: 4px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
     .hidden { display: none; }
