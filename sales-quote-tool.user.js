@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Sales Quote Tool
 // @namespace    https://github.com/your-org/front-desk-quoter
-// @version      4.6
-// @description  Text Wrapping for Termination Terms - No other changes
+// @version      4.7
+// @description  Added Gold Card 10% Discount Logic
 // @match        *://splynx.primo.net.nz/*
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
@@ -114,6 +114,10 @@
                 <label><input type="checkbox" id="port"> Port existing number ($25)</label>
               </div>
           </div>
+          <div class="section-box">
+              <h3>Discounts</h3>
+              <label><input type="checkbox" id="goldCard"> Gold Card Holder (10% off Plan)</label>
+          </div>
       </div>
       <button class="printBtn" id="generatePdf">Print Quote</button>
     </div>
@@ -135,7 +139,8 @@
     go15: document.querySelector('#go15'),
     go15CompBox: document.querySelector('#go15CompBox'),
     go50: document.querySelector('#go50'),
-    go50CompBox: document.querySelector('#go50CompBox')
+    go50CompBox: document.querySelector('#go50CompBox'),
+    goldCard: document.querySelector('#goldCard')
   };
 
   els.custType.onchange = (e) => els.resLogic.classList.toggle('hidden', e.target.value !== 'res');
@@ -240,7 +245,9 @@
       y += 10;
     };
 
-    addLineItem(`${bb.dataset.name} Broadband`, Number(bb.dataset.price));
+    const bbPrice = Number(bb.dataset.price);
+    addLineItem(`${bb.dataset.name} Broadband`, bbPrice);
+
     document.querySelectorAll('.mobile:checked').forEach(m => {
         addLineItem(`${m.dataset.name} Mobile`, Number(m.dataset.price));
         mobileCount++;
@@ -252,10 +259,30 @@
             }
         }
     });
+
     if (els.voip.checked) addLineItem('VOIP Landline', (els.connType.value === 'wireless' ? 15 : 10));
 
-    if (mobileCount > 0 && bb.dataset.bundle === "true") {
-      addLineItem('Bundle Discount (Mobile)', -10, false, true);
+    // --- DISCOUNT LOGIC ---
+    let bundleDiscountAmount = 0;
+    let goldCardDiscountAmount = 0;
+
+    // Mobile bundle: $10. Logic: must have mobile AND plan allows bundle AND plan is not Mates Rates
+    if (mobileCount > 0 && bb.dataset.bundle === "true" && bb.dataset.mates !== "true") {
+      bundleDiscountAmount = 10;
+    }
+
+    // Gold card: 10% of BB plan. Logic: Checkbox checked AND not starter AND not mates
+    if (els.goldCard.checked && bb.dataset.starter !== "true" && bb.dataset.mates !== "true") {
+      goldCardDiscountAmount = bbPrice * 0.10;
+    }
+
+    // Apply the higher discount of the two
+    if (goldCardDiscountAmount > 0 || bundleDiscountAmount > 0) {
+      if (goldCardDiscountAmount >= bundleDiscountAmount) {
+        addLineItem('Gold Card Discount (10%)', -goldCardDiscountAmount, false, true);
+      } else {
+        addLineItem('Bundle Discount (Mobile)', -bundleDiscountAmount, false, true);
+      }
     }
 
     if (els.connType.value === 'wireless' && !els.contractBox.checked && bb.dataset.mates !== 'true') {
@@ -283,12 +310,10 @@
     y += 8;
     const isContract = els.contractBox.checked;
 
-    // Wrapped Header Text
     const termBase = isContract ? 'This quote is based on a 12-Month Minimum Service Term.' : 'This service is provided on an Open Term (No Contract) basis.';
     doc.text(termBase, 14, y);
     y += 6;
 
-    // Wrapped Sub Text (The line that was overflowing)
     let subText = "";
     if (isContract) {
       const etcVal = els.connType.value === 'fibre' ? '$149.00' : '$599.00 (or the remainder of the contract, whichever is lower)';
