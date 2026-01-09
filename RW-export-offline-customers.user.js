@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Splynx RW Residential Export Offline Customers
 // @namespace    http://tampermonkey.net/
-// @version      2.9
+// @version      3.0
 // @description  List of Online and Online last 24 hours Wireless customers so HD can contact
 // @match        https://splynx.primo.net.nz/admin/*
 // @grant        none
