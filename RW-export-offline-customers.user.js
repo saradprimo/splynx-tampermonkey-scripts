@@ -6,6 +6,8 @@
 // @match        https://splynx.primo.net.nz/admin/*
 // @grant        none
 // @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/RW-export-offline-customers.user.js
+// @downloadURL  https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/RW-export-offline-customers.user.js
 // ==/UserScript==
 
 (function() {
