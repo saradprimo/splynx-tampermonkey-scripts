@@ -8,6 +8,8 @@
 // @grant        GM_getResourceURL
 // @resource     PRIMO_LOGO https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/primologo2.png
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+// @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/sales-quote-tool.user.js
+// @downloadURL  https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/sales-quote-tool.user.js
 // ==/UserScript==
 
 (function () {
