@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Sales Quote Tool
 // @namespace    https://github.com/your-org/front-desk-quoter
-// @version      4.7.1
-// @description  Added Gold Card 10% Discount Logic
+// @version      4.8
+// @description  Sales Quote tool
 // @match        *://splynx.primo.net.nz/*
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
@@ -25,28 +25,41 @@
     orange: '#ff6900'
   };
 
-  /* ===================== STYLES ===================== */
+  /* ===================== STYLES (SCOPED TO PANEL) ===================== */
   GM_addStyle(`
     #quoteBtn {
         background-color: #007bff;
         color: white;
         border: none;
         border-radius: 4px;
-        padding: 4px 10px;
+        padding: 4px 12px;
         margin-right: 8px;
         cursor: pointer;
-        font-weight: bold;
-        font-size: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: none; /* Ensures no uppercase override */
     }
-    #quotePanel { position: fixed; top: 0; right: -420px; width: 400px; height: 100%; background: ${COLORS.white}; box-shadow: -4px 0 14px rgba(0,0,0,.18); z-index: 10000; padding: 25px 18px; overflow-y: auto; transition: right 0.3s ease; font-family: system-ui, Arial, sans-serif; border-left: 5px solid ${COLORS.orange}; }
+    #quotePanel {
+        position: fixed; top: 0; right: -420px; width: 400px; height: 100%;
+        background: ${COLORS.white}; box-shadow: -4px 0 14px rgba(0,0,0,.18);
+        z-index: 10000; padding: 25px 18px; overflow-y: auto;
+        transition: right 0.3s ease; font-family: system-ui, Arial, sans-serif;
+        border-left: 5px solid ${COLORS.orange}; color: ${COLORS.dark};
+    }
     #quotePanel.open { right: 0; }
     #closePanel { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: ${COLORS.dark}; font-weight: bold; }
-    .section-box { background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-    h2 { color: ${COLORS.dark}; border-bottom: 2px solid ${COLORS.blue}; padding-bottom: 5px; }
-    h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: ${COLORS.blue}; }
-    label { display: block; margin: 7px 0; font-size: 13px; color: ${COLORS.dark}; }
-    select, input[type="text"], input[type="number"] { width: 100%; margin-top: 4px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-    .hidden { display: none; }
+
+    /* Scoped Styles to prevent breaking Splynx layout */
+    #quotePanel .section-box { background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+    #quotePanel h2 { color: ${COLORS.dark}; border-bottom: 2px solid ${COLORS.blue}; padding-bottom: 5px; margin-top: 0; font-size: 20px; }
+    #quotePanel h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: bold; color: ${COLORS.blue}; text-transform: uppercase; border: none; background: transparent; }
+    #quotePanel label { display: block; margin: 7px 0; font-size: 13px; color: ${COLORS.dark}; }
+    #quotePanel select, #quotePanel input[type="text"], #quotePanel input[type="number"] {
+        width: 100%; margin-top: 4px; padding: 6px; border: 1px solid #ccc;
+        border-radius: 4px; background: white; color: black;
+    }
+
+    .hidden { display: none !important; }
     .printBtn { margin-top: 10px; width: 100%; padding: 12px; background: ${COLORS.green}; color: ${COLORS.white}; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
     .indented { margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px; margin-top: 5px; }
   `);
@@ -173,7 +186,8 @@
       const headerNav = document.querySelector('.splynx-header .navigation');
       if (headerNav && !document.querySelector('#quoteBtn')) {
           const btn = document.createElement('button');
-          btn.id = 'quoteBtn'; btn.innerText = 'CREATE QUOTE';
+          btn.id = 'quoteBtn';
+          btn.innerText = 'Create Quote'; // Changed to sentence case
           headerNav.parentNode.insertBefore(btn, headerNav);
           btn.onclick = () => document.querySelector('#quotePanel').classList.add('open');
       }
@@ -262,21 +276,17 @@
 
     if (els.voip.checked) addLineItem('VOIP Landline', (els.connType.value === 'wireless' ? 15 : 10));
 
-    // --- DISCOUNT LOGIC ---
     let bundleDiscountAmount = 0;
     let goldCardDiscountAmount = 0;
 
-    // Mobile bundle: $10. Logic: must have mobile AND plan allows bundle AND plan is not Mates Rates
     if (mobileCount > 0 && bb.dataset.bundle === "true" && bb.dataset.mates !== "true") {
       bundleDiscountAmount = 10;
     }
 
-    // Gold card: 10% of BB plan. Logic: Checkbox checked AND not starter AND not mates
     if (els.goldCard.checked && bb.dataset.starter !== "true" && bb.dataset.mates !== "true") {
       goldCardDiscountAmount = bbPrice * 0.10;
     }
 
-    // Apply the higher discount of the two
     if (goldCardDiscountAmount > 0 || bundleDiscountAmount > 0) {
       if (goldCardDiscountAmount >= bundleDiscountAmount) {
         addLineItem('Gold Card Discount (10%)', -goldCardDiscountAmount, false, true);
