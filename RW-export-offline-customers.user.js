@@ -22,25 +22,16 @@
     // --------------------
     function addHeaderButton() {
         const navList = document.querySelector(".splynx-header ul.navigation");
-
         if (!navList || document.getElementById("rw-export-btn-container")) return;
 
-        // Force the container to have absolutely no extra spacing
         const li = document.createElement("li");
         li.id = "rw-export-btn-container";
-        li.style.cssText = `
-            display: flex !important;
-            align-items: center !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            list-style: none !important;
-        `;
+        li.style.cssText = "display: flex !important; align-items: center !important; padding: 0 !important; margin: 0 !important; list-style: none !important;";
 
         exportButton = document.createElement("button");
         exportButton.id = "rw-export-btn";
         exportButton.innerText = "Export RW Residential";
 
-        // Final style check: No margin-left, explicit 8px margin-right
         exportButton.style.cssText = `
             background-color: #007bff;
             color: white;
@@ -56,47 +47,77 @@
             height: 26px;
             line-height: 1;
         `;
-        exportButton.disabled = true;
 
         exportButton.addEventListener("click", (e) => {
             e.preventDefault();
-            exportButton.disabled = true;
-            exportButton.innerText = "Processing...";
-            activeCustomers = [];
-            online24hCustomers = [];
-            setTimeout(applyFilters, 500);
+            startExportSequence();
         });
 
         li.appendChild(exportButton);
-
-        // prepend puts it as the first item in the navigation list
         navList.prepend(li);
     }
 
-    function checkPage() {
-        if (!exportButton) addHeaderButton();
-        if (!exportButton) return;
+    // --------------------
+    // Sequence Logic
+    // --------------------
+    async function startExportSequence() {
+        exportButton.disabled = true;
+        exportButton.innerText = "Navigating...";
 
-        if (window.location.pathname.includes("/admin/customers/search")) {
-            exportButton.disabled = false;
-            exportButton.style.backgroundColor = "#007bff";
-            exportButton.style.opacity = "1";
+        // If we are NOT on the search page, navigate there first
+        if (!window.location.pathname.includes("/admin/customers/search")) {
+            localStorage.setItem('rw_export_pending', 'true');
+
+            // 1. Click "Customers" menu to expand it
+            const customerMenu = document.querySelector('a.color-purple i.icon-ic_fluent_people_team_24_regular')?.closest('a');
+            if (customerMenu) customerMenu.click();
+
+            await new Promise(r => setTimeout(r, 500));
+
+            // 2. Click "Search" link
+            const searchLink = document.querySelector('a[href="/admin/customers/search"]');
+            if (searchLink) {
+                searchLink.click();
+            } else {
+                // Fallback: force location change if menu click fails
+                window.location.href = "/admin/customers/search";
+            }
         } else {
-            exportButton.disabled = true;
-            exportButton.style.backgroundColor = "#999";
-            exportButton.style.opacity = "0.7";
+            // Already on search page, just run
+            runExport();
         }
     }
 
-    // --- Processing Logic ---
+    // This checks if we just arrived here via the button click
+    function checkPendingExport() {
+        if (localStorage.getItem('rw_export_pending') === 'true' && window.location.pathname.includes("/admin/customers/search")) {
+            localStorage.removeItem('rw_export_pending');
+            runExport();
+        }
+    }
 
+    async function runExport() {
+        if (exportButton) {
+            exportButton.disabled = true;
+            exportButton.innerText = "Processing...";
+        }
+        activeCustomers = [];
+        online24hCustomers = [];
+        await applyFilters();
+    }
+
+    // --------------------
+    // Filter Logic (Standard)
+    // --------------------
     async function applyFilters() {
         try {
             const statusDropdown = await waitForElement('.ms-choice');
             statusDropdown.click();
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 300));
+
             const statusItems = [...document.querySelectorAll('.ms-drop li')]
                 .filter(li => li.textContent.trim() === "Active" || li.textContent.trim() === "Online last 24 hours");
+
             statusItems.forEach(item => {
                 const checkbox = item.querySelector('input[type=checkbox]');
                 if(checkbox && !checkbox.checked) checkbox.click();
@@ -108,9 +129,11 @@
             const tariffInput = document.querySelectorAll('.input-ms-search')[1];
             tariffInput.value = 'RW Residential';
             tariffInput.dispatchEvent(new Event('input', { bubbles: true }));
-            await new Promise(r => setTimeout(r, 300));
+
+            await new Promise(r => setTimeout(r, 400));
             const tariffItems = [...document.querySelectorAll('.ms-drop li')]
                 .filter(li => li.textContent.includes('RW Residential'));
+
             tariffItems.forEach(item => {
                 const checkbox = item.querySelector('input[type=checkbox]');
                 if(checkbox && !checkbox.checked) checkbox.click();
@@ -120,7 +143,7 @@
             const findButton = await waitForElement('#admin_customers_search_form_search_button');
             findButton.click();
 
-            setTimeout(() => waitForTable(collectAllPages), 1000);
+            setTimeout(() => waitForTable(collectAllPages), 1200);
         } catch (err) { console.error("Filter Error:", err); }
     }
 
@@ -129,7 +152,7 @@
             const timer = setInterval(() => {
                 const el = document.querySelector(selector);
                 if(el) { clearInterval(timer); resolve(el); }
-            }, 100);
+            }, 150);
         });
     }
 
@@ -140,7 +163,7 @@
                 clearInterval(interval);
                 callback();
             }
-        }, 400);
+        }, 500);
     }
 
     function parsePage() {
@@ -167,7 +190,7 @@
         const nextBtn = document.querySelector("#customers_list_table_next a");
         if (nextBtn && !nextBtn.parentElement.classList.contains("disabled")) {
             nextBtn.click();
-            setTimeout(collectAllPages, 900);
+            setTimeout(collectAllPages, 1000);
         } else {
             showExportView();
         }
@@ -254,8 +277,10 @@
         newTab.document.write(html);
         newTab.document.close();
 
-        exportButton.innerText = "Export RW Residential";
-        exportButton.disabled = false;
+        if (exportButton) {
+            exportButton.innerText = "Export RW Residential";
+            exportButton.disabled = false;
+        }
     }
 
     window.addEventListener("message", (event) => {
@@ -264,8 +289,19 @@
 
     // --- Init ---
     addHeaderButton();
-    checkPage();
-    const observer = new MutationObserver(() => checkPage());
+    checkPendingExport();
+
+    // Check page for button status
+    if (exportButton) {
+        exportButton.disabled = false;
+        exportButton.style.backgroundColor = "#007bff";
+        exportButton.style.opacity = "1";
+    }
+
+    const observer = new MutationObserver(() => {
+        addHeaderButton();
+        checkPendingExport();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
 })();
