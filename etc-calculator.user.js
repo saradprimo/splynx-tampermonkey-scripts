@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Splynx ETC Calculator
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      2.4.2
+// @version      2.5
 // @description  ETC Calculator with categories, filtered plans, Fibre Starter always $0 ETC
 // @match        *://*/*
 // @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js
@@ -23,7 +23,7 @@
     }
 
     function addETCButton(header, nav) {
-        // Compact Trigger Button (Original Size)
+        // Compact Trigger Button
         const btn = document.createElement('button');
         btn.textContent = 'ETC Calculator';
         btn.style.cssText = `
@@ -207,7 +207,6 @@
                 return;
             }
 
-            // --- STRICT VALIDATION ---
             const dateRegex = /^(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
             const match = dateVal.match(dateRegex);
 
@@ -232,23 +231,32 @@
                 return;
             }
 
-            // Calculation
+            // Calculation Logic
             const monthsUsed = monthsBetween(testDate, today);
             const monthsLeft = Math.max(0, 12 - monthsUsed);
             const monthlyCharge = allPlans[plan].monthly;
             let remainder = monthsLeft * monthlyCharge;
-            let etc = remainder;
+            let etc = 0;
 
-            if(plan === 'fib_res_starter') etc = 0;
-            else if(plan.startsWith('fib_res')) etc = 149;
-            else if(plan.startsWith('fib_bus')) etc = remainder;
+            if(plan === 'fib_res_starter') {
+                etc = 0;
+            }
+            else if(plan.startsWith('fib_res')) {
+                // FIXED: If user has used more than 12 months, ETC is 0. Otherwise 149.
+                etc = (monthsUsed < 12) ? 149 : 0;
+            }
+            else if(plan.startsWith('fib_bus')) {
+                etc = remainder;
+            }
             else if(plan.startsWith('wr_')) {
                 if(plan === 'wr_mates') {
                     if(!matesYear) { output.innerHTML = '<span style="color: #dc3545;">Please select 1st or 2nd year.</span>'; return; }
                     etc = Math.min(matesYear === '1' ? 599 : 199, remainder);
                 } else etc = Math.min(599, remainder);
             }
-            else if(plan.startsWith('wb_')) etc = Math.min(599, remainder);
+            else if(plan.startsWith('wb_')) {
+                etc = Math.min(599, remainder);
+            }
 
             output.innerHTML = `
                 <div style="font-size: 14px; color: #666;">Summary:</div>
