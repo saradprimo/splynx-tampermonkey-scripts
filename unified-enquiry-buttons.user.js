@@ -9,6 +9,8 @@
 // @grant        GM_getValue
 // @grant        GM_deleteValue
 // @grant        GM_openInTab
+// @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-enquiry-buttons.user.js
+// @downloadURL  https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-enquiry-buttons.user.js
 // ==/UserScript==
 
 (function() {
