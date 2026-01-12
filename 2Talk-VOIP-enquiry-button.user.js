@@ -1,11 +1,9 @@
 // ==UserScript==
 // @name         VOIP Enquiry Button
 // @namespace    http://tampermonkey.net/
-// @version      6.1
+// @version      6.2
 // @description  2Talk VOIP navigation using number from active VOIP sub.
-// @match        https://splynx.primo.net.nz/admin/customers/view?id=*
-// @match        https://primocap.2talk.co.nz/*
-// @match        https://primobump.2talk.co.nz/*
+// @match        *://*/*
 // @grant        GM_notification
 // @grant        GM_openInTab
 // @grant        GM_setValue
