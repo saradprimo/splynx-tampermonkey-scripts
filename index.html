@@ -2,96 +2,118 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Splynx Tampermonkey Scripts - One Click Install</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             max-width: 800px;
             margin: 40px auto;
             line-height: 1.6;
             padding: 0 20px;
+            background-color: #f4f7f9;
+            color: #333;
         }
         h1 {
             color: #0074D9;
             text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
         }
         ul {
             list-style: none;
             padding: 0;
         }
         li {
-            margin-bottom: 20px;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #f8f8f8;
+            margin-bottom: 15px;
+            padding: 20px;
+            border: 1px solid #e1e4e8;
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        li:hover {
+            transform: translateY(-2px);
+            border-color: #0074D9;
+        }
+        /* Highlight the Unified entry */
+        li.priority {
+            border-left: 5px solid #0074D9;
+            background: #f0f7ff;
         }
         a {
             color: #0074D9;
             text-decoration: none;
             font-weight: bold;
+            font-size: 1.1em;
         }
         a:hover {
             text-decoration: underline;
         }
         p {
-            margin: 6px 0 0 0;
-            font-weight: normal;
+            margin: 8px 0 0 0;
+            color: #555;
+            font-size: 0.95em;
+        }
+        .badge {
+            background: #0074D9;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            vertical-align: middle;
+            margin-left: 10px;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
+
     <h1>Splynx Tampermonkey Scripts</h1>
-    <p>Click a script link below to install it directly in Tampermonkey. Make sure you have Tampermonkey installed in your browser.</p>
+    <p class="subtitle">Click a script to install. Ensure the Tampermonkey extension is active.</p>
+
     <ul>
-        <li>
-            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js" target="_blank">
-                Splynx ETC Calculator
-            </a>
-            <p>Calculates Early Termination Charges (ETC) based on contract start date and plan. Applies plan-specific rules, including capped amounts and Fibre Starter always $0 ETC.</p>
-        </li>
-        <li>
+        <li class="priority">
             <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-enquiry-buttons.user.js" target="_blank">
                 Unified Enquiry Buttons
             </a>
-            <p>Buttons for ONT, Mobile (XVNE), and VOIP (2Talk) enquiries To shorten navigation times through the different portals.</p>
+            <span class="badge">Recommended</span>
+            <p><strong>Most Important:</strong> Combined buttons for ONT, Mobile (XVNE), and VOIP (2Talk) enquiries. Streamlines navigation across different portals from within Splynx.</p>
         </li>
-        <li>
-            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/activity-feed-visual-separator.user.js" target="_blank">
-                Activity Feed Visual Separator
-            </a>
-            <p>Adds borders, background, and shadows to activity items in tickets dashboard in Splynx. Ensures full text is always visible and highlights admin system items.</p>
-        </li>
-        <li>
-            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-enquiry-button.user.js" target="_blank">
-                ONT Enquiry Button
-            </a>
-            <p>Shows a single ONT Enquiry button on the Services tab. Auto-selects single PIID or provides a stable dropdown for multiple PIIDs for fast diagnostics.</p>
-        </li>
-        <li>
-            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/ont-notifier-summary.user.js" target="_blank">
-                ONT Enquiry Notifier & Summary
-            </a>
-            <p>Provides a full ONT summary with collapsible sections, handover & power status symbols, connected devices with vendor info, scrollable summary, and real-time notifications for test completion or failures.</p>
-        </li>
+
         <li>
             <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/RW-export-offline-customers.user.js" target="_blank">
                 RW Export Offline Customers
             </a>
-            <p>Exports a list of offline RW Residential customers so we can quickly see a list, or export list to CSV. That way HD can proactively contact customers.</p>
+            <p>Quickly identify and export lists of offline RW Residential customers to CSV for proactive Helpdesk contact.</p>
         </li>
+
+        <li>
+            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/activity-feed-visual-separator.user.js" target="_blank">
+                Activity Feed Visual Separator
+            </a>
+            <p>Enhances the ticket dashboard by adding borders, shadows, and background highlights to activity items for better readability.</p>
+        </li>
+
+        <li>
+            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js" target="_blank">
+                Splynx ETC Calculator
+            </a>
+            <p>Automates Early Termination Charge calculations based on contract dates and plan-specific rules.</p>
+        </li>
+
         <li>
             <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/sales-quote-tool.user.js" target="_blank">
                 Sales Quote Tool
             </a>
-            <p>Provides a sidebar in Splinx so you can quickly generate a quote for leads to show their recurring monthly totals and one-off charges. The toold includes all our Broadband, Mobile & VOIP plans, along with the discounts/bundles.</p>
-        </li>
-        <li>
-            <a href="https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/2Talk-VOIP-enquiry-button.user.js" target="_blank">
-                2Talk VOIP Enquiry Button
-            </a>
-            <p>Provides a one-click workflow for 2Talk VOIP services, automatically navigating through the 2Talk portals to the specific Cloud PBX extension. It features a smart dropdown for accounts with multiple numbers.</p>
+            <p>Integrated sidebar for generating fast quotes for leads, covering Broadband, Mobile, and VOIP bundles.</p>
         </li>
     </ul>
+
 </body>
 </html>
