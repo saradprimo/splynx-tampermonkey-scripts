@@ -11,8 +11,8 @@
 // @grant        GM_deleteValue
 // @grant        GM_xmlhttpRequest
 // @run-at       document-idle
-// @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-primo-enquiry-buttons.user.js
-// @downloadURL  https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-primo-enquiry-buttons.user.js
+// @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-enquiry-buttons.user.js
+// @downloadURL  https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/unified-enquiry-buttons.user.js
 // ==/UserScript==
 
 (function() {
