@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Splynx ETC Calculator
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      3.1
+// @version      3.2
 // @description  ETC Calculator with categories, filtered plans, Fibre Starter always $0 ETC
 // @match        *://*/*
 // @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js
