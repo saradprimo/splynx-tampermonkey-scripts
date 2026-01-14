@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Splynx ETC Calculator
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      2.9
+// @version      3.0
 // @description  ETC Calculator with categories, filtered plans, Fibre Starter always $0 ETC
 // @match        *://*/*
 // @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js
@@ -14,24 +14,22 @@
 
     const manualPlans = {
         fib_res: [
-            { name: "Fibre Starter - $65", price: 65, type: "fibre_starter" },
-            { name: "GoMassive 500 - $99", price: 99, type: "fibre" },
-            { name: "GoMassive Max - $115", price: 115, type: "fibre" }
+            { name: "UFB Residential Starter - $65", price: 65 },
+            { name: "UFB Residential 500 GoMassive - $99", price: 99 },
+            { name: "UFB Residential MAX GoMassive - $115", price: 115 }
         ],
         fib_bus: [
-            { name: "GoMassive 300 - $105 + GST", price: 105, type: "fibre" },
-            { name: "GoMassive Max - $129 + GST", price: 129, type: "fibre" }
+            { name: "UFB Business 300 GoMassive - $105", price: 105 },
+            { name: "UFB Business MAX GoMassive - $129", price: 129 }
         ],
         wr_res: [
-            { name: "Wireless 200GB - $79", price: 79, type: "wireless" },
-            { name: "Wireless 400GB - $99", price: 99, type: "wireless" },
-            { name: "Wireless 800GB - $119", price: 119, type: "wireless" },
-            { name: "Wireless Unlimited - $149", price: 149, type: "wireless" }
+            { name: "RW Residential 200GB - $79", price: 79 },
+            { name: "RW Residential 400GB - $99", price: 99 },
+            { name: "RW Residential Mates Rates - $99", price: 99 }
         ],
         wr_bus: [
-            { name: "Wireless 200GB - $86.90 + GST", price: 86.90, type: "wireless" },
-            { name: "Wireless 400GB - $103.48 + GST", price: 103.48, type: "wireless" },
-            { name: "Wireless Unlimited - $146.96 + GST", price: 146.96, type: "wireless" }
+            { name: "RW Business 200GB - $86.90", price: 86.90 },
+            { name: "RW Business Mates Rates - $119", price: 119 }
         ]
     };
 
@@ -62,22 +60,28 @@
                 </div>
 
                 <div id="service-selector-area" style="padding: 15px 20px 0 20px;">
-                    <label style="display:block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 8px; text-transform: uppercase;">Detected Services:</label>
+                    <label style="display:block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 8px; text-transform: uppercase;">Active Services (UFB/RW):</label>
                     <div id="service-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;"></div>
                 </div>
 
                 <div style="padding: 0 20px 20px 20px; overflow-y: auto; flex-grow: 1;">
                     <div id="manual-dropdowns" style="margin-bottom: 15px; padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px;">
-                        <label style="display:block; font-size: 11px; font-weight: bold; color: #856404; margin-bottom: 8px;">MANUAL SELECTION</label>
-                        <select id="sel-category" style="width:100%; padding: 8px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                        <label style="display:block; font-size: 11px; font-weight: bold; color: #856404; margin-bottom: 8px;">MANUAL PLAN SELECTOR</label>
+                        <select id="sel-category" style="width:100%; padding: 8px; margin-bottom: 8px; border-radius: 4px;">
                             <option value="">-- Select Category --</option>
-                            <option value="fib_res">Fibre Residential</option>
-                            <option value="fib_bus">Fibre Business</option>
-                            <option value="wr_res">Wireless Residential</option>
-                            <option value="wr_bus">Wireless Business</option>
+                            <option value="fib_res">UFB Residential</option>
+                            <option value="fib_bus">UFB Business</option>
+                            <option value="wr_res">RW Residential</option>
+                            <option value="wr_bus">RW Business</option>
                         </select>
-                        <select id="sel-plan" style="width:100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" disabled>
-                            <option value="">-- Select Plan --</option>
+                        <select id="sel-plan" style="width:100%; padding: 8px; border-radius: 4px;" disabled></select>
+                    </div>
+
+                    <div id="mates-year-toggle" style="display:none; margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #b6d4fe; border-radius: 4px;">
+                        <label style="display:block; font-size: 12px; font-weight: bold; color: #004085; margin-bottom: 5px;">Mates Rates Year:</label>
+                        <select id="mates-year-val" style="width:100%; padding: 5px;">
+                            <option value="1">1st Year (Cap $599)</option>
+                            <option value="2">2nd Year (Cap $199)</option>
                         </select>
                     </div>
 
@@ -90,13 +94,13 @@
                         <input type="number" id="etc-manual-price" style="width:100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Plan Name</label>
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Detected Plan Name</label>
                         <input type="text" id="etc-plan-name" style="width:100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background:#f9f9f9;">
                     </div>
                     <button id="etc-calc-btn" style="width:100%; padding: 10px; background-color:#28a745; color:white; border:none; border-radius: 4px; cursor:pointer; font-weight: 600;">Calculate</button>
 
                     <div id="etc-output" style="margin-top: 20px; padding: 15px; border-radius: 4px; background: #f1f3f5; min-height: 60px; border: 1px solid #ddd;">
-                        <span style="color: #888;">Detecting services...</span>
+                        <span style="color: #888;">Select service...</span>
                     </div>
                 </div>
             </div>
@@ -111,9 +115,10 @@
         const dateInput = container.querySelector('#etc-date-display');
         const priceInput = container.querySelector('#etc-manual-price');
         const planInput = container.querySelector('#etc-plan-name');
+        const matesToggle = container.querySelector('#mates-year-toggle');
+        const matesYearVal = container.querySelector('#mates-year-val');
         const output = container.querySelector('#etc-output');
 
-        // --- Manual Dropdown Logic ---
         selCat.addEventListener('change', () => {
             const cat = selCat.value;
             selPlan.innerHTML = '<option value="">-- Select Plan --</option>';
@@ -133,9 +138,12 @@
             if (selPlan.value) {
                 planInput.value = selPlan.value;
                 priceInput.value = opt.dataset.price;
+                matesToggle.style.display = selPlan.value.toLowerCase().includes("mates") ? "block" : "none";
                 runCalculation();
             }
         });
+
+        matesYearVal.addEventListener('change', runCalculation);
 
         function parseNZDate(dateStr) {
             if (!dateStr) return null;
@@ -143,40 +151,14 @@
             return parts.length === 3 ? new Date(parts[2], parts[1] - 1, parts[0]) : null;
         }
 
-        function scanAllServices() {
-            const services = [];
-            const headers = Array.from(document.querySelectorAll('th'));
-            const findIdx = (reg) => headers.findIndex(th => reg.test(th.getAttribute('aria-label') || "") || reg.test(th.innerText || ""));
-
-            const pIdx = findIdx(/Plan/i);
-            const sIdx = findIdx(/Status/i);
-            const prIdx = findIdx(/Price/i);
-            const eIdx = findIdx(/End of contract/i);
-
-            if (pIdx !== -1 && sIdx !== -1) {
-                const rows = Array.from(document.querySelectorAll('table[id*="internet_list"] tbody tr'));
-                rows.forEach(row => {
-                    const status = row.cells[sIdx]?.innerText.trim().toLowerCase();
-                    if (status === 'active' || status === 'online') {
-                        services.push({
-                            plan: row.cells[pIdx].innerText.trim(),
-                            price: parseFloat(row.cells[prIdx].innerText.replace(/[^0-9.]/g, '')),
-                            date: row.cells[eIdx].innerText.trim().replace('00/00/0000', '').replace('-', '').trim(),
-                            status: status.toUpperCase()
-                        });
-                    }
-                });
-            }
-            return services;
-        }
-
         function runCalculation() {
             const endDate = parseNZDate(dateInput.value);
             const today = new Date();
-            const currentPrice = parseFloat(priceInput.value);
+            const price = parseFloat(priceInput.value) || 0;
+            const plan = planInput.value.toUpperCase(); // Standardize for prefix checking
 
             if (!endDate || isNaN(endDate.getTime())) {
-                output.innerHTML = `<span style="color: #d9480f;"><strong>Required:</strong> Enter End of Contract date (DD/MM/YYYY).</span>`;
+                output.innerHTML = `<span style="color: #d9480f;">Enter valid date.</span>`;
                 return;
             }
 
@@ -189,63 +171,76 @@
             if (endDate.getDate() > today.getDate()) monthsLeft++;
             monthsLeft = Math.max(0, monthsLeft);
 
+            const remainder = monthsLeft * price;
             let etc = 0;
-            const p = planInput.value.toLowerCase();
-            if (p.includes('starter')) etc = 0;
-            else if (p.includes('fibre')) etc = 149.00;
-            else etc = Math.min(599, monthsLeft * (currentPrice || 0));
+            let logicText = "";
+
+            // --- REFINED LOGIC ---
+            if (plan.includes('STARTER')) {
+                etc = 0; logicText = "UFB Starter ($0)";
+            } else if (plan.startsWith('UFB') && plan.includes('RESIDENTIAL')) {
+                etc = 149.00; logicText = "UFB Residential (Fixed $149)";
+            } else if (plan.startsWith('UFB') && plan.includes('BUSINESS')) {
+                etc = remainder; logicText = "UFB Business (Full Remainder)";
+            } else if (plan.includes('MATES')) {
+                const cap = matesYearVal.value === "1" ? 599 : 199;
+                etc = Math.min(cap, remainder);
+                logicText = `RW Mates Rates (Year ${matesYearVal.value} Cap)`;
+            } else if (plan.startsWith('RW')) {
+                etc = Math.min(599, remainder);
+                logicText = "RW Wireless (Capped at $599)";
+            } else {
+                etc = remainder; logicText = "Generic Plan (Remainder)";
+            }
 
             output.innerHTML = `
-                <div style="font-size: 14px; margin-bottom: 5px;">Plan: <strong>${planInput.value}</strong></div>
-                <div style="font-size: 14px; margin: 3px 0;">Remaining: <strong>${monthsLeft} months</strong></div>
-                <div style="font-size: 22px; color: #007bff; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">ETC: <strong>$${etc.toFixed(2)}</strong></div>
+                <div style="font-size: 13px; color: #666; margin-bottom: 5px;"><strong>Rule:</strong> ${logicText}</div>
+                <div style="font-size: 14px; margin: 3px 0;">Months Left: <strong>${monthsLeft}</strong></div>
+                <div style="font-size: 24px; color: #007bff; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">ETC: <strong>$${etc.toFixed(2)}</strong></div>
             `;
         }
 
         const openPanel = () => {
             serviceListDiv.innerHTML = "";
-            planInput.value = ""; priceInput.value = ""; dateInput.value = "";
-            selCat.value = ""; selPlan.innerHTML = '<option value="">-- Select Plan --</option>'; selPlan.disabled = true;
+            const headers = Array.from(document.querySelectorAll('th'));
+            const findIdx = (reg) => headers.findIndex(th => reg.test(th.getAttribute('aria-label') || "") || reg.test(th.innerText || ""));
+            const pIdx = findIdx(/Plan/i), sIdx = findIdx(/Status/i), prIdx = findIdx(/Price/i), eIdx = findIdx(/End of contract/i);
 
-            const activeServices = scanAllServices();
+            const activeRows = Array.from(document.querySelectorAll('table[id*="internet_list"] tbody tr'))
+                .filter(r => /active|online/i.test(r.cells[sIdx]?.innerText || ""));
 
-            if (activeServices.length > 0) {
-                activeServices.forEach(s => {
+            if (activeRows.length > 0) {
+                activeRows.forEach(row => {
+                    const s = {
+                        plan: row.cells[pIdx].innerText.trim(),
+                        price: parseFloat(row.cells[prIdx].innerText.replace(/[^0-9.]/g, '')),
+                        date: row.cells[eIdx].innerText.trim().replace('00/00/0000', '').replace('-', '').trim()
+                    };
                     const sBtn = document.createElement('div');
-                    sBtn.style.cssText = `padding: 10px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; transition: all 0.2s;`;
-                    sBtn.innerHTML = `<div style="font-weight: bold; font-size: 13px; color: #333;">${s.plan}</div><div style="font-size: 11px; color: #28a745;">${s.status} • $${s.price}</div>`;
+                    sBtn.style.cssText = `padding: 10px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; margin-bottom:5px;`;
+                    sBtn.innerHTML = `<div style="font-weight: bold; font-size: 13px;">${s.plan}</div><div style="font-size: 11px; color: #28a745;">$${s.price}</div>`;
                     sBtn.onclick = () => {
-                        planInput.value = s.plan;
-                        priceInput.value = s.price;
-                        dateInput.value = s.date;
-                        Array.from(serviceListDiv.children).forEach(child => {
-                            child.style.borderColor = "#ddd";
-                            child.style.background = "#fff";
-                        });
+                        planInput.value = s.plan; priceInput.value = s.price; dateInput.value = s.date;
+                        matesToggle.style.display = s.plan.toLowerCase().includes("mates") ? "block" : "none";
+                        Array.from(serviceListDiv.children).forEach(c => c.style.borderColor = "#ddd");
                         sBtn.style.borderColor = "#007bff";
-                        sBtn.style.background = "#f0f7ff";
                         runCalculation();
                     };
                     serviceListDiv.appendChild(sBtn);
                 });
                 setTimeout(() => serviceListDiv.firstChild.click(), 50);
-            } else {
-                serviceListDiv.innerHTML = `<div style="color: #dc3545; font-size: 12px;">No active services found. Please select a plan manually below.</div>`;
             }
 
             overlay.style.display = 'block';
             setTimeout(() => { overlay.style.opacity = '1'; container.style.right = '0'; }, 10);
         };
 
-        const closePanel = () => {
-            overlay.style.opacity = '0'; container.style.right = '-400px';
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
-        };
-
         btn.addEventListener('click', openPanel);
-        overlay.addEventListener('click', closePanel);
-        container.querySelector('#etc-close').addEventListener('click', closePanel);
-        container.querySelector('#etc-calc-btn').addEventListener('click', runCalculation);
+        container.querySelector('#etc-close').onclick = () => {
+            overlay.style.opacity = '0'; container.style.right = '-400px';
+            setTimeout(() => overlay.style.display = 'none', 300);
+        };
+        container.querySelector('#etc-calc-btn').onclick = runCalculation;
     }
 
     waitForHeader();
