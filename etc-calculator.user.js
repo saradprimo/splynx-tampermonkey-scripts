@@ -87,7 +87,7 @@
                         <label style="display:block; font-size: 12px; font-weight: bold; color: #004085; margin-bottom: 5px;">Mates Rates Year:</label>
                         <select id="mates-year-val" style="width:100%; padding: 5px;">
                             <option value="1">1st Year (Cap $599)</option>
-                            <option value="2">2nd Year (Cap $199)</option>
+                            <option value="2">2nd Year (Cap $299)</option>
                         </select>
                     </div>
 
@@ -188,7 +188,7 @@
             } else if (plan.includes('UFB') && plan.includes('BUSINESS')) {
                 etc = remainder; logicText = "UFB Business (Full Remainder)";
             } else if (plan.includes('MATES')) {
-                const cap = matesYearVal.value === "1" ? 599 : 199;
+                const cap = matesYearVal.value === "1" ? 599 : 299;
                 etc = Math.min(cap, remainder);
                 logicText = `RW Mates Rates (Year ${matesYearVal.value} Cap)`;
             } else if (plan.includes('RW')) {
