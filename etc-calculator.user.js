@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Splynx ETC Calculator
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      3.0
+// @version      3.1
 // @description  ETC Calculator with categories, filtered plans, Fibre Starter always $0 ETC
 // @match        *://*/*
 // @updateURL    https://raw.githubusercontent.com/saradprimo/splynx-tampermonkey-scripts/main/etc-calculator.user.js
@@ -12,24 +12,30 @@
 (function() {
     'use strict';
 
+    // Updated Manual Plan Data
     const manualPlans = {
         fib_res: [
-            { name: "UFB Residential Starter - $65", price: 65 },
-            { name: "UFB Residential 500 GoMassive - $99", price: 99 },
-            { name: "UFB Residential MAX GoMassive - $115", price: 115 }
+            { name: "UFB Residential Fibre Starter - $65", price: 65 },
+            { name: "UFB Residential GoMassive 500 - $99", price: 99 },
+            { name: "UFB Residential GoMassive Maxd - $115", price: 115 }
         ],
         fib_bus: [
-            { name: "UFB Business 300 GoMassive - $105", price: 105 },
-            { name: "UFB Business MAX GoMassive - $129", price: 129 }
+            { name: "UFB Business GoMassive 300 - $105 + GST", price: 105 },
+            { name: "UFB Business GoMassive Max - $129 + GST", price: 129 }
         ],
         wr_res: [
             { name: "RW Residential 200GB - $79", price: 79 },
             { name: "RW Residential 400GB - $99", price: 99 },
+            { name: "RW Residential 800GB - $119", price: 119 },
+            { name: "RW Residential Unlimited - $149", price: 149 },
             { name: "RW Residential Mates Rates - $99", price: 99 }
         ],
         wr_bus: [
-            { name: "RW Business 200GB - $86.90", price: 86.90 },
-            { name: "RW Business Mates Rates - $119", price: 119 }
+            { name: "RW Business 200GB - $86.09 + GST", price: 86.09 },
+            { name: "RW Business 400GB - $103.48 + GST", price: 103.48 },
+            { name: "RW Business 800GB - $120.87 + GST", price: 120.87 },
+            { name: "RW Business Unlimited - $146.96 + GST", price: 146.96 },
+            { name: "RW Business Mates Rates - $119 + GST", price: 119 }
         ]
     };
 
@@ -60,7 +66,7 @@
                 </div>
 
                 <div id="service-selector-area" style="padding: 15px 20px 0 20px;">
-                    <label style="display:block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 8px; text-transform: uppercase;">Active Services (UFB/RW):</label>
+                    <label style="display:block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 8px; text-transform: uppercase;">Detected Services:</label>
                     <div id="service-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;"></div>
                 </div>
 
@@ -91,16 +97,16 @@
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom: 5px; font-weight: 600;">Plan Price ($)</label>
-                        <input type="number" id="etc-manual-price" style="width:100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" id="etc-manual-price" step="0.01" style="width:100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Detected Plan Name</label>
+                        <label style="display:block; margin-bottom: 5px; font-weight: 600;">Plan Name</label>
                         <input type="text" id="etc-plan-name" style="width:100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background:#f9f9f9;">
                     </div>
                     <button id="etc-calc-btn" style="width:100%; padding: 10px; background-color:#28a745; color:white; border:none; border-radius: 4px; cursor:pointer; font-weight: 600;">Calculate</button>
 
                     <div id="etc-output" style="margin-top: 20px; padding: 15px; border-radius: 4px; background: #f1f3f5; min-height: 60px; border: 1px solid #ddd;">
-                        <span style="color: #888;">Select service...</span>
+                        <span style="color: #888;">Select service to calculate...</span>
                     </div>
                 </div>
             </div>
@@ -155,10 +161,10 @@
             const endDate = parseNZDate(dateInput.value);
             const today = new Date();
             const price = parseFloat(priceInput.value) || 0;
-            const plan = planInput.value.toUpperCase(); // Standardize for prefix checking
+            const plan = planInput.value.toUpperCase();
 
             if (!endDate || isNaN(endDate.getTime())) {
-                output.innerHTML = `<span style="color: #d9480f;">Enter valid date.</span>`;
+                output.innerHTML = `<span style="color: #d9480f;">Enter valid date (DD/MM/YYYY).</span>`;
                 return;
             }
 
@@ -175,18 +181,17 @@
             let etc = 0;
             let logicText = "";
 
-            // --- REFINED LOGIC ---
             if (plan.includes('STARTER')) {
                 etc = 0; logicText = "UFB Starter ($0)";
-            } else if (plan.startsWith('UFB') && plan.includes('RESIDENTIAL')) {
+            } else if (plan.includes('UFB') && plan.includes('RESIDENTIAL')) {
                 etc = 149.00; logicText = "UFB Residential (Fixed $149)";
-            } else if (plan.startsWith('UFB') && plan.includes('BUSINESS')) {
+            } else if (plan.includes('UFB') && plan.includes('BUSINESS')) {
                 etc = remainder; logicText = "UFB Business (Full Remainder)";
             } else if (plan.includes('MATES')) {
                 const cap = matesYearVal.value === "1" ? 599 : 199;
                 etc = Math.min(cap, remainder);
                 logicText = `RW Mates Rates (Year ${matesYearVal.value} Cap)`;
-            } else if (plan.startsWith('RW')) {
+            } else if (plan.includes('RW')) {
                 etc = Math.min(599, remainder);
                 logicText = "RW Wireless (Capped at $599)";
             } else {
@@ -194,9 +199,9 @@
             }
 
             output.innerHTML = `
-                <div style="font-size: 13px; color: #666; margin-bottom: 5px;"><strong>Rule:</strong> ${logicText}</div>
-                <div style="font-size: 14px; margin: 3px 0;">Months Left: <strong>${monthsLeft}</strong></div>
-                <div style="font-size: 24px; color: #007bff; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">ETC: <strong>$${etc.toFixed(2)}</strong></div>
+                <div style="font-size: 13px; color: #666; margin-bottom: 5px;"><strong>Logic:</strong> ${logicText}</div>
+                <div style="font-size: 14px; margin: 3px 0;">Months Remaining: <strong>${monthsLeft}</strong></div>
+                <div style="font-size: 24px; color: #007bff; margin-top: 8px; border-top: 1px solid #eee; padding-top: 10px;">ETC: <strong>$${etc.toFixed(2)}</strong></div>
             `;
         }
 
