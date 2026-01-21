@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Unified Primo Enquiry Buttons
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      2.1
+// @version      2.2
 // @description  Unified script: ONT, VOIP, XVNE, Preseem buttons + ONT Notifier & Summary
 // @match        *://*/*
 // @grant        GM_notification
@@ -1187,6 +1187,246 @@
         } else if (window.location.hostname.includes('xvne.partners.one.nz')) {
             runXVNEAutomation();
         }
+    })();
+
+    // ============================================================================
+    // 6. GOOGLE MAPS (SIDEBAR & SERVICES)
+    // ============================================================================
+  (function googleMapsButtons() {
+        if (host !== 'splynx.primo.net.nz') return;
+
+        // FIXED URL FORMAT: Uses the standard Google Maps query URL
+        const getMapUrl = (address) => 'https://www.google.com/maps?q=' + encodeURIComponent(address);
+
+        // --- PART A: SIDEBAR BUTTON (Customer Profile) ---
+        (function sidebarMapsButton() {
+            const BUTTON_GROUP_ID = 'splynx-sidebar-maps-btn-group';
+
+            function getProfileAddress() {
+                // Target the specific input from your HTML snippet
+                const streetInput = document.querySelector('input[name="Customers[street_1]"]');
+
+                if (!streetInput) return null;
+
+                // Try to get value, fallback to 'original-value' attribute if value is empty/hidden
+                let fullAddress = streetInput.value.trim() || streetInput.getAttribute('original-value');
+
+                // Optional: Try to append City/Zip for better accuracy
+                try {
+                    const cityInput = document.querySelector('input[name="Customers[city]"]');
+                    const zipInput = document.querySelector('input[name="Customers[zip_code]"]');
+
+                    if (cityInput && cityInput.value.trim()) {
+                        fullAddress += `, ${cityInput.value.trim()}`;
+                    }
+                    if (zipInput && zipInput.value.trim()) {
+                        fullAddress += `, ${zipInput.value.trim()}`;
+                    }
+                } catch (e) {
+                    // If city/zip fails, ignore and use street
+                }
+
+                return fullAddress;
+            }
+
+            function addButton() {
+                const buttonWrapper = document.querySelector('.customer-buttons-wrapper');
+                // Check if wrapper exists and button doesn't already exist
+                if (!buttonWrapper || document.getElementById(BUTTON_GROUP_ID)) return;
+
+                // Create Group
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'btn-group';
+                btnGroup.id = BUTTON_GROUP_ID;
+                btnGroup.style.marginRight = '4px';
+
+                // Create Button
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-primary';
+                btn.innerHTML = '<i class="fa fa-map-marker"></i> Maps';
+                btn.title = 'Open Profile Address in Google Maps';
+                btn.style.minWidth = '80px';
+
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    const address = getProfileAddress();
+                    if (address && address !== 'null') {
+                        window.open(getMapUrl(address), '_blank');
+                    } else {
+                        alert('Could not find an address in the "Street" field.');
+                    }
+                };
+
+                btnGroup.appendChild(btn);
+
+                // Insert at START (Left side) of the wrapper
+                if (buttonWrapper.firstChild) {
+                    buttonWrapper.insertBefore(btnGroup, buttonWrapper.firstChild);
+                } else {
+                    buttonWrapper.appendChild(btnGroup);
+                }
+            }
+
+            const observer = new MutationObserver(() => {
+                // Ensure the input field actually exists before adding button
+                if (document.querySelector('input[name="Customers[street_1]"]')) {
+                    addButton();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+
+        // --- PART B: SERVICES TAB BUTTON (Subscription Address) ---
+        (function servicesMapsButton() {
+            const wrapperId = 'splynx_services_maps_wrapper';
+            let lastKnownAddressesJson = '[]';
+
+            function findUniqueAddresses() {
+                const table = document.querySelector('#admin_customers_services_internet_list');
+                if (!table) return [];
+
+                // Find "Subscription Address" column index
+                const headers = Array.from(table.querySelectorAll('thead th'));
+                const colIndex = headers.findIndex(th => th.textContent.trim() === 'Subscription Address');
+
+                if (colIndex === -1) return [];
+
+                const uniqueAddresses = new Set();
+                const rows = table.querySelectorAll('tbody tr');
+
+                for (const row of rows) {
+                    const badge = row.querySelector('label.badge.bg-success, label.badge.bg-primary');
+                    // Check for Active/Online status
+                    if (badge && (badge.textContent.trim().toLowerCase() === 'online' || badge.textContent.trim().toLowerCase() === 'active')) {
+                        const tds = row.querySelectorAll('td');
+                        if (tds.length > colIndex) {
+                            const addr = tds[colIndex].textContent.trim();
+                            // Filter out empty or placeholder dashes
+                            if (addr && addr !== '-' && addr !== '') {
+                                uniqueAddresses.add(addr);
+                            }
+                        }
+                    }
+                }
+                return Array.from(uniqueAddresses).sort();
+            }
+
+            function isServicesTabActive() {
+                const activeTab = document.querySelector('a.active_tab.tabs__link');
+                return activeTab && activeTab.textContent.trim().toLowerCase() === 'services';
+            }
+
+            function updateButton() {
+                const header = document.querySelector('.card-block-header .pull-right');
+                if (!header) return;
+
+                const wrapper = document.getElementById(wrapperId);
+
+                if (!isServicesTabActive()) {
+                    if (wrapper) {
+                        wrapper.remove();
+                        lastKnownAddressesJson = '[]';
+                    }
+                    return;
+                }
+
+                const currentAddresses = findUniqueAddresses();
+                const currentJson = JSON.stringify(currentAddresses);
+
+                if (currentJson === lastKnownAddressesJson && wrapper) return;
+                lastKnownAddressesJson = currentJson;
+
+                // Setup Wrapper
+                let container = wrapper;
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = wrapperId;
+                    container.className = 'btn-group btn-group-xs';
+                    container.setAttribute('role', 'group');
+                    container.style.marginRight = '20px';
+                    container.style.position = 'relative';
+                    // Insert at the START of the header buttons (Left side)
+                    header.insertBefore(container, header.firstChild);
+                } else {
+                    container.innerHTML = '';
+                }
+
+                // --- Logic ---
+                if (currentAddresses.length === 0) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary';
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa fa-map-marker"></i> Maps';
+                    btn.title = 'No active subscription addresses found';
+                    btn.style.minWidth = '80px';
+                    container.appendChild(btn);
+                }
+                else if (currentAddresses.length === 1) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-primary';
+                    btn.innerHTML = '<i class="fa fa-map-marker"></i> Maps';
+                    btn.style.minWidth = '80px';
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        window.open(getMapUrl(currentAddresses[0]), '_blank');
+                    };
+                    container.appendChild(btn);
+                }
+                else {
+                    // Dropdown
+                    const toggleBtn = document.createElement('button');
+                    toggleBtn.className = 'btn btn-primary dropdown-toggle';
+                    toggleBtn.innerHTML = '<i class="fa fa-map-marker"></i> Maps <span class="caret"></span>';
+                    toggleBtn.style.minWidth = '80px';
+                    container.appendChild(toggleBtn);
+
+                    const menu = document.createElement('div');
+                    Object.assign(menu.style, {
+                        position: 'absolute', top: '110%', left: '0',
+                        backgroundColor: '#fff', border: '1px solid #ccc',
+                        borderRadius: '6px', boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                        padding: '4px 0', zIndex: '9999', display: 'none',
+                        minWidth: '200px', textAlign: 'left'
+                    });
+
+                    currentAddresses.forEach(addr => {
+                        const item = document.createElement('div');
+                        item.textContent = addr;
+                        item.style.padding = '8px 12px';
+                        item.style.cursor = 'pointer';
+                        item.style.fontSize = '12px';
+                        item.style.color = '#333';
+                        item.style.borderBottom = '1px solid #eee';
+
+                        item.onmouseenter = () => item.style.backgroundColor = '#f0f0f0';
+                        item.onmouseleave = () => item.style.backgroundColor = '';
+                        item.onclick = (e) => {
+                            e.stopPropagation();
+                            window.open(getMapUrl(addr), '_blank');
+                            menu.style.display = 'none';
+                        };
+                        menu.appendChild(item);
+                    });
+
+                    toggleBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                    };
+
+                    document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
+                    container.appendChild(menu);
+                }
+            }
+
+            const observer = new MutationObserver(() => {
+                 setTimeout(updateButton, 200);
+            });
+            const mainContent = document.querySelector('.card-block') || document.body;
+            observer.observe(mainContent, { childList: true, subtree: true });
+
+            if(document.readyState === 'complete') updateButton();
+        })();
     })();
 
 })();
