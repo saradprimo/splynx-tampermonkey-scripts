@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Unified Primo Enquiry Buttons
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      2.0
+// @version      2.1
 // @description  Unified script: ONT, VOIP, XVNE, Preseem buttons + ONT Notifier & Summary
 // @match        *://*/*
 // @grant        GM_notification
@@ -847,29 +847,43 @@
     })();
 
     // ============================================================================
-    // 4. PRESEEM BUTTON
+    // 4. PRESEEM BUTTON (Dynamic Column Search)
     // ============================================================================
     (function preseemButton() {
         if (host !== 'splynx.primo.net.nz') return;
 
         const wrapperId = 'preseem_stable_wrapper';
-        let lastKnownLogin = '';
+        let lastKnownLoginsJson = '[]';
 
-        function findActiveServiceLogin() {
+        // Returns sorted array of unique, active service logins
+        function findActiveServiceLogins() {
             const table = document.querySelector('#admin_customers_services_internet_list');
-            if (!table) return null;
+            if (!table) return [];
 
+            // 1. DYNAMICALLY FIND THE COLUMN INDEX
+            // We search the header row for the "Service login" column
+            const headers = Array.from(table.querySelectorAll('thead th'));
+            const columnIndex = headers.findIndex(th => th.textContent.trim() === 'Service login');
+
+            // If we can't find the column, stop immediately
+            if (columnIndex === -1) return [];
+
+            const uniqueLogins = new Set();
             const rows = table.querySelectorAll('tbody tr');
+
             for (const row of rows) {
                 const badge = row.querySelector('label.badge.bg-success, label.badge.bg-primary');
+                // Check if row is Active or Online
                 if (badge && (badge.textContent.trim().toLowerCase() === 'online' || badge.textContent.trim().toLowerCase() === 'active')) {
                     const tds = row.querySelectorAll('td');
-                    if (tds.length >= 9) {
-                        return tds[8].textContent.trim();
+                    // Ensure the row has enough cells to cover the column we found
+                    if (tds.length > columnIndex) {
+                        const login = tds[columnIndex].textContent.trim();
+                        if (login) uniqueLogins.add(login);
                     }
                 }
             }
-            return null;
+            return Array.from(uniqueLogins).sort();
         }
 
         function isServicesTabActive() {
@@ -886,16 +900,17 @@
             if (!isServicesTabActive()) {
                 if (wrapper) {
                     wrapper.remove();
-                    lastKnownLogin = '';
+                    lastKnownLoginsJson = '[]';
                 }
                 return;
             }
 
-            const currentLogin = findActiveServiceLogin();
+            const currentLogins = findActiveServiceLogins();
+            const currentLoginsJson = JSON.stringify(currentLogins);
 
-            if (currentLogin === lastKnownLogin && wrapper) return;
+            if (currentLoginsJson === lastKnownLoginsJson && wrapper) return;
 
-            lastKnownLogin = currentLogin;
+            lastKnownLoginsJson = currentLoginsJson;
 
             let container = wrapper;
             if (!container) {
@@ -910,52 +925,95 @@
                 container.innerHTML = '';
             }
 
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.style.minWidth = '120px';
-
-            if (!currentLogin) {
+            // CASE 0: No Active Services
+            if (currentLogins.length === 0) {
+                const button = document.createElement('button');
                 button.className = 'btn btn-secondary';
                 button.disabled = true;
                 button.textContent = 'Preseem';
-                button.title = 'No active internet service login found in table';
-            } else {
-                const directUrl = 'https://app.preseem.com/r/subscriber/' + encodeURIComponent(currentLogin);
+                button.title = 'No active internet service login found';
+                button.style.minWidth = '120px';
+                container.appendChild(button);
+            }
+            // CASE 1: Single Service
+            else if (currentLogins.length === 1) {
+                const login = currentLogins[0];
+                const button = document.createElement('button');
                 button.className = 'btn btn-primary';
                 button.innerHTML = '<i class="fa fa-line-chart"></i> Preseem';
-                button.title = 'Open Preseem for ' + currentLogin;
+                button.title = 'Open Preseem for ' + login;
+                button.style.minWidth = '120px';
                 button.onclick = (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
-                    window.open(directUrl, '_blank');
+                    window.open('https://app.preseem.com/r/subscriber/' + encodeURIComponent(login), '_blank');
                 };
+                container.appendChild(button);
             }
+            // CASE 2+: Multiple Services (Dropdown)
+            else {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'btn btn-primary dropdown-toggle';
+                toggleBtn.innerHTML = '<i class="fa fa-line-chart"></i> Preseem <span class="caret"></span>';
+                toggleBtn.style.minWidth = '120px';
+                container.appendChild(toggleBtn);
 
-            container.appendChild(button);
+                // Manual Dropdown Menu
+                const menu = document.createElement('div');
+                Object.assign(menu.style, {
+                    position: 'absolute',
+                    top: '110%',
+                    left: '0',
+                    backgroundColor: '#fff',
+                    border: '1px solid #ccc',
+                    borderRadius: '6px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    padding: '4px 0',
+                    zIndex: '9999',
+                    display: 'none',
+                    minWidth: '130px',
+                    textAlign: 'left'
+                });
+
+                currentLogins.forEach(login => {
+                    const item = document.createElement('div');
+                    item.textContent = login;
+                    item.style.padding = '6px 12px';
+                    item.style.cursor = 'pointer';
+                    item.style.fontSize = '12px';
+                    item.style.color = '#333';
+                    item.onmouseenter = () => item.style.backgroundColor = '#f0f0f0';
+                    item.onmouseleave = () => item.style.backgroundColor = '';
+                    item.onclick = (e) => {
+                        e.stopPropagation();
+                        window.open('https://app.preseem.com/r/subscriber/' + encodeURIComponent(login), '_blank');
+                        menu.style.display = 'none';
+                    };
+                    menu.appendChild(item);
+                });
+
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                };
+
+                document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
+                container.appendChild(menu);
+            }
         }
 
         function startDynamicWatcher() {
             updatePreseemButton();
-
             let debounceTimer;
             const observer = new MutationObserver(() => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(updatePreseemButton, 200);
             });
-
             const mainContent = document.querySelector('.card-block') || document.body;
-            observer.observe(mainContent, {
-                childList: true,
-                subtree: true,
-                attributes: false
-            });
+            observer.observe(mainContent, { childList: true, subtree: true, attributes: false });
         }
 
-        if (document.readyState === 'complete') {
-            startDynamicWatcher();
-        } else {
-            window.addEventListener('load', startDynamicWatcher);
-        }
+        if (document.readyState === 'complete') startDynamicWatcher();
+        else window.addEventListener('load', startDynamicWatcher);
     })();
 
     // ============================================================================
