@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Unified Primo Enquiry Buttons
 // @namespace    https://github.com/saradprimo/splynx-tampermonkey-scripts
-// @version      2.2
+// @version      2.3
 // @description  Unified script: ONT, VOIP, XVNE, Preseem buttons + ONT Notifier & Summary
 // @match        *://*/*
 // @grant        GM_notification
@@ -20,6 +20,46 @@
 
     const host = window.location.host;
     const currentUrl = window.location.href;
+
+    // ============================================================================
+    // HELPER: Create Info Icon with Tooltip
+    // ============================================================================
+    function createInfoIcon(message, button) {
+        // Store the current button content before modifying
+        const currentContent = button.innerHTML || button.textContent;
+
+        // Make button position relative so icon can be absolutely positioned
+        button.style.position = 'relative';
+        button.style.paddingRight = '30px'; // Add space for the icon
+
+        // Create the icon element
+        const icon = document.createElement('span');
+        icon.innerHTML = '<i class="fa fa-info-circle"></i>';
+        icon.style.position = 'absolute';
+        icon.style.top = '4px';
+        icon.style.right = '6px';
+        icon.style.cursor = 'pointer';
+        icon.style.color = '#0056b3'; // Darker blue for better visibility
+        icon.style.fontSize = '14px';
+        icon.style.zIndex = '1000';
+        icon.style.pointerEvents = 'auto'; // Always clickable
+        icon.title = 'Click for requirements';
+
+        icon.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            alert(message);
+            return false;
+        };
+
+        icon.onmousedown = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        };
+
+        return icon;
+    }
 
     // ============================================================================
     // 1. VOIP ENQUIRY BUTTON
@@ -47,18 +87,47 @@
 
             function findValidVoipRows() {
                 const validNumbers = [];
-                const rows = document.querySelectorAll('tr.odd, tr.even');
+                const table = document.querySelector('#admin_customers_services_voice_list');
+                if (!table) return validNumbers;
+
+                // DYNAMIC COLUMN SEARCH - Find "Phone" column index
+                const headers = Array.from(table.querySelectorAll('thead th'));
+                const phoneColumnIndex = headers.findIndex(th =>
+                    th.textContent.trim().toLowerCase() === 'phone'
+                );
+
+                // If Phone column not found, return empty
+                if (phoneColumnIndex === -1) return validNumbers;
+
+                const rows = table.querySelectorAll('tbody tr.odd, tbody tr.even');
+
                 for (const row of rows) {
                     const tds = row.querySelectorAll('td');
-                    if (tds.length < 9) continue;
-                    const statusText = tds[1].textContent.trim().toLowerCase();
-                    const planText = tds[3].textContent.trim().toLowerCase();
+                    if (tds.length <= phoneColumnIndex) continue;
 
-                    if (statusText === 'active' && planText.replace(/\s/g, '').includes('primovoice')) {
-                        const num = tds[8].textContent.trim().split(',')[0].trim();
-                        if (num && !validNumbers.includes(num)) validNumbers.push(num);
+                    // Find status badge
+                    const badge = row.querySelector('label.badge.bg-success, label.badge.bg-primary');
+                    const statusText = badge ? badge.textContent.trim().toLowerCase() : '';
+
+                    // Find plan text (look through all cells for "primovoice")
+                    let hasPrimoVoice = false;
+                    for (const td of tds) {
+                        const text = td.textContent.trim().toLowerCase();
+                        if (text.replace(/\s/g, '').includes('primovoice')) {
+                            hasPrimoVoice = true;
+                            break;
+                        }
+                    }
+
+                    if (statusText === 'active' && hasPrimoVoice) {
+                        const phoneCell = tds[phoneColumnIndex].textContent.trim();
+                        const num = phoneCell.split(',')[0].trim();
+                        if (num && !validNumbers.includes(num)) {
+                            validNumbers.push(num);
+                        }
                     }
                 }
+
                 return validNumbers;
             }
 
@@ -108,7 +177,23 @@
                     button.type = 'button';
                     button.className = 'btn btn-secondary';
                     button.disabled = true;
-                    button.textContent = 'VOIP Enquiry';
+                    button.style.minWidth = '120px';
+
+                    // Create text node first
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = 'VOIP Enquiry';
+                    button.appendChild(textSpan);
+
+                    // Add info icon
+                    const infoMessage = 'VOIP Enquiry Requirements:\n\n' +
+                        '✓ Services tab must be active\n' +
+                        '✓ At least one service with status "Active"\n' +
+                        '✓ Service plan must contain "PrimoVoice"\n' +
+                        '✓ "Phone" column must be visible in the table\n' +
+                        '✓ Phone number must be present in the Phone column';
+                    const icon = createInfoIcon(infoMessage, button);
+                    button.appendChild(icon);
+
                     wrapper.appendChild(button);
                 } else if (validNumbers.length === 1) {
                     const button = document.createElement('button');
@@ -315,8 +400,22 @@
                 button.type = 'button';
                 button.className = 'btn btn-secondary';
                 button.disabled = true;
-                button.textContent = 'ONT Enquiry';
-                button.title = 'No active/online Fibre or UFB plan found';
+                button.style.minWidth = '120px';
+
+                // Create text node first
+                const textSpan = document.createElement('span');
+                textSpan.textContent = 'ONT Enquiry';
+                button.appendChild(textSpan);
+
+                // Add info icon
+                const infoMessage = 'ONT Enquiry Requirements:\n\n' +
+                    '✓ Services tab must be active\n' +
+                    '✓ At least one service with status "Online" or "Active"\n' +
+                    '✓ Service plan must contain "Fibre", "Fiber", or "UFB"\n' +
+                    '✓ Service must have a PIID starting with "UFF"';
+                const icon = createInfoIcon(infoMessage, button);
+                button.appendChild(icon);
+
                 wrapper.appendChild(button);
             } else if (validPiids.length === 1) {
                 const button = document.createElement('button');
@@ -930,9 +1029,21 @@
                 const button = document.createElement('button');
                 button.className = 'btn btn-secondary';
                 button.disabled = true;
-                button.textContent = 'Preseem';
-                button.title = 'No active internet service login found';
                 button.style.minWidth = '120px';
+
+                // Create content with icon first
+                const contentSpan = document.createElement('span');
+                contentSpan.innerHTML = '<i class="fa fa-line-chart"></i> Preseem';
+                button.appendChild(contentSpan);
+
+                // Add info icon
+                const infoMessage = 'Preseem Requirements:\n\n' +
+                    '✓ Services tab must be active\n' +
+                    '✓ At least one internet service with status "Online" or "Active"\n' +
+                    '✓ "Service login" column must be visible in the table';
+                const icon = createInfoIcon(infoMessage, button);
+                button.appendChild(icon);
+
                 container.appendChild(button);
             }
             // CASE 1: Single Service
@@ -1022,19 +1133,47 @@
     (function xvneEnquiry() {
         function findValidMobileRows() {
             const validNumbers = [];
-            const rows = document.querySelectorAll('tr.odd, tr.even');
+            const table = document.querySelector('#admin_customers_services_voice_list');
+            if (!table) return validNumbers;
+
+            // DYNAMIC COLUMN SEARCH - Find "Phone" column index
+            const headers = Array.from(table.querySelectorAll('thead th'));
+            const phoneColumnIndex = headers.findIndex(th =>
+                th.textContent.trim().toLowerCase() === 'phone'
+            );
+
+            // If Phone column not found, return empty
+            if (phoneColumnIndex === -1) return validNumbers;
+
+            const rows = table.querySelectorAll('tbody tr.odd, tbody tr.even');
+
             for (const row of rows) {
                 const tds = row.querySelectorAll('td');
-                if (tds.length < 9) continue;
-                const statusText = tds[1].textContent.trim().toLowerCase();
-                const planText = tds[3].textContent.trim().toLowerCase();
-                if (statusText === 'active' && planText.replace(/\s/g, '').includes('primomobile')) {
-                    const num = tds[8].textContent.trim().split(',')[0].trim();
+                if (tds.length <= phoneColumnIndex) continue;
+
+                // Find status badge
+                const badge = row.querySelector('label.badge.bg-success, label.badge.bg-primary');
+                const statusText = badge ? badge.textContent.trim().toLowerCase() : '';
+
+                // Find plan text (look through all cells for "primomobile")
+                let hasPrimoMobile = false;
+                for (const td of tds) {
+                    const text = td.textContent.trim().toLowerCase();
+                    if (text.replace(/\s/g, '').includes('primomobile')) {
+                        hasPrimoMobile = true;
+                        break;
+                    }
+                }
+
+                if (statusText === 'active' && hasPrimoMobile) {
+                    const phoneCell = tds[phoneColumnIndex].textContent.trim();
+                    const num = phoneCell.split(',')[0].trim();
                     if (num && !validNumbers.includes(num)) {
                         validNumbers.push(num);
                     }
                 }
             }
+
             return validNumbers;
         }
 
@@ -1086,7 +1225,23 @@
                 const button = document.createElement('button');
                 button.className = 'btn btn-secondary';
                 button.disabled = true;
-                button.textContent = 'XVNE Enquiry';
+                button.style.minWidth = '120px';
+
+                // Create text node first
+                const textSpan = document.createElement('span');
+                textSpan.textContent = 'XVNE Enquiry';
+                button.appendChild(textSpan);
+
+                // Add info icon
+                const infoMessage = 'XVNE Enquiry Requirements:\n\n' +
+                    '✓ Services tab must be active\n' +
+                    '✓ At least one service with status "Active"\n' +
+                    '✓ Service plan must contain "PrimoMobile"\n' +
+                    '✓ "Phone" column must be visible in the table\n' +
+                    '✓ Phone number must be present in the Phone column';
+                const icon = createInfoIcon(infoMessage, button);
+                button.appendChild(icon);
+
                 wrapper.appendChild(button);
             } else if (validNumbers.length === 1) {
                 const button = document.createElement('button');
@@ -1192,7 +1347,7 @@
     // ============================================================================
     // 6. GOOGLE MAPS (SIDEBAR & SERVICES)
     // ============================================================================
-  (function googleMapsButtons() {
+    (function googleMapsButtons() {
         if (host !== 'splynx.primo.net.nz') return;
 
         // FIXED URL FORMAT: Uses the standard Google Maps query URL
@@ -1357,9 +1512,22 @@
                     const btn = document.createElement('button');
                     btn.className = 'btn btn-secondary';
                     btn.disabled = true;
-                    btn.innerHTML = '<i class="fa fa-map-marker"></i> Maps';
-                    btn.title = 'No active subscription addresses found';
                     btn.style.minWidth = '80px';
+
+                    // Create content with icon first
+                    const contentSpan = document.createElement('span');
+                    contentSpan.innerHTML = '<i class="fa fa-map-marker"></i> Maps';
+                    btn.appendChild(contentSpan);
+
+                    // Add info icon
+                    const infoMessage = 'Maps Requirements:\n\n' +
+                        '✓ Services tab must be active\n' +
+                        '✓ At least one service with status "Online" or "Active"\n' +
+                        '✓ "Subscription Address" column must be visible in the table\n' +
+                        '✓ Valid address must be present (not "-" or empty)';
+                    const icon = createInfoIcon(infoMessage, btn);
+                    btn.appendChild(icon);
+
                     container.appendChild(btn);
                 }
                 else if (currentAddresses.length === 1) {
